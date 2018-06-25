@@ -5274,8 +5274,8 @@ module.exports = AFRAME.registerComponent('gamepad-controls', {
     camera: { default: '[camera]', type: 'selector' },
 
     // Rotation sensitivity
-    rotationSensitivity: { default: 0.05 // radians/frame, ish
-    } },
+    rotationSensitivity: { default: 2.0 }
+  },
 
   /*******************************************************************
    * Core
@@ -5372,20 +5372,34 @@ module.exports = AFRAME.registerComponent('gamepad-controls', {
   updateRotation: function updateRotation(dt) {
     if (!this.isRotationActive()) return;
 
+    var data = this.data;
+    var yaw = this.yaw;
+    var pitch = this.pitch;
+    var lookControls = data.camera.components['look-controls'];
+    var hasLookControls = lookControls && lookControls.pitchObject && lookControls.yawObject;
+
+    // Sync with look-controls pitch/yaw if available.
+    if (hasLookControls) {
+      pitch.rotation.copy(lookControls.pitchObject.rotation);
+      yaw.rotation.copy(lookControls.yawObject.rotation);
+    }
+
     var lookVector = this.getJoystick(1);
 
     if (Math.abs(lookVector.x) <= JOYSTICK_EPS) lookVector.x = 0;
     if (Math.abs(lookVector.y) <= JOYSTICK_EPS) lookVector.y = 0;
 
-    var data = this.data;
-    var yaw = this.yaw;
-    var pitch = this.pitch;
-
     lookVector.multiplyScalar(data.rotationSensitivity * dt / 1000);
     yaw.rotation.y -= lookVector.x;
     pitch.rotation.x -= lookVector.y;
     pitch.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch.rotation.x));
-    data.camera.object3D.rotation.set(THREE.Math.radToDeg(pitch.rotation.x), THREE.Math.radToDeg(yaw.rotation.y), 0);
+    data.camera.object3D.rotation.set(pitch.rotation.x, yaw.rotation.y, 0);
+
+    // Sync with look-controls pitch/yaw if available.
+    if (hasLookControls) {
+      lookControls.pitchObject.rotation.copy(pitch.rotation);
+      lookControls.yawObject.rotation.copy(yaw.rotation);
+    }
   },
 
   /*******************************************************************
@@ -5801,7 +5815,7 @@ module.exports = AFRAME.registerComponent('movement-controls', {
         end.copy(velocity).multiplyScalar(dt / 1000).add(start);
 
         var nav = el.sceneEl.systems.nav;
-        this.navGroup = this.navGroup || nav.getGroup(start);
+        this.navGroup = this.navGroup === null ? nav.getGroup(start) : this.navGroup;
         this.navNode = this.navNode || nav.getNode(start, this.navGroup);
         this.navNode = nav.clampStep(start, end, this.navGroup, this.navNode, clampedEnd);
         el.object3D.position.copy(clampedEnd);
@@ -6897,7 +6911,7 @@ module.exports = AFRAME.registerComponent('kinematic-body', {
         position = new CANNON.Vec3().copy(el.getAttribute('position'));
 
     this.body = new CANNON.Body({
-      material: this.system.material,
+      material: this.system.getMaterial('staticMaterial'),
       position: position,
       mass: data.mass,
       linearDamping: data.linearDamping,
@@ -7496,7 +7510,7 @@ module.exports = AFRAME.registerSystem('nav', {
    * @return {Array<THREE.Vector3>}
    */
   getPath: function getPath(start, end, groupID) {
-    return pathfinder.findPath(start, end, ZONE, groupID);
+    return this.navMesh ? pathfinder.findPath(start, end, ZONE, groupID) : null;
   },
 
   /**
@@ -7504,7 +7518,7 @@ module.exports = AFRAME.registerSystem('nav', {
    * @return {number}
    */
   getGroup: function getGroup(position) {
-    return pathfinder.getGroup(ZONE, position);
+    return this.navMesh ? pathfinder.getGroup(ZONE, position) : null;
   },
 
   /**
@@ -7513,7 +7527,7 @@ module.exports = AFRAME.registerSystem('nav', {
    * @return {Node}
    */
   getNode: function getNode(position, groupID) {
-    return pathfinder.getClosestNode(position, ZONE, groupID, true);
+    return this.navMesh ? pathfinder.getClosestNode(position, ZONE, groupID, true) : null;
   },
 
   /**
@@ -7525,9 +7539,12 @@ module.exports = AFRAME.registerSystem('nav', {
    * @return {Node} Current node, after step is taken.
    */
   clampStep: function clampStep(start, end, groupID, node, endTarget) {
-    if (!this.navMesh || !node) {
+    if (!this.navMesh) {
       endTarget.copy(end);
-      return this.navMesh ? this.getNode(end, groupID) : null;
+      return null;
+    } else if (!node) {
+      endTarget.copy(end);
+      return this.getNode(end, groupID);
     }
     return pathfinder.clampStep(start, end, node, ZONE, groupID, endTarget);
   }
