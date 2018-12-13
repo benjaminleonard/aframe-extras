@@ -6,14 +6,14 @@
     <title>Examples • Platforms</title>
     <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
     <script src="../bundle.js"></script>
-    <script src="//cdn.rawgit.com/donmccurdy/aframe-physics-system/v2.1.0/dist/aframe-physics-system.min.js"></script>
+    <script src="//cdn.rawgit.com/donmccurdy/aframe-physics-system/v3.2.0/dist/aframe-physics-system.min.js"></script>
   </head>
   <body>
     <a-scene fog="type: exponential; color: #FFF; density: 0.04;">
       <!-- Player -->
       <a-entity id="rig"
                 movement-controls
-                kinematic-body
+                kinematic-body="enableJumps: true"
                 position="15 0 10"
                 jump-ability="maxJumps: 3;
                               distance: 10;">

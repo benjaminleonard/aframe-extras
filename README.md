@@ -1,7 +1,8 @@
 # A-Frame Extras
 
-[![Build Status](https://travis-ci.org/donmccurdy/aframe-extras.svg?branch=master)](https://travis-ci.org/donmccurdy/aframe-extras)
+[![Latest NPM release](https://img.shields.io/npm/v/aframe-extras.svg)](https://www.npmjs.com/package/aframe-extras)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/donmccurdy/aframe-extras/master/LICENSE)
+[![Build Status](https://travis-ci.org/donmccurdy/aframe-extras.svg?branch=master)](https://travis-ci.org/donmccurdy/aframe-extras)
 
 Add-ons and helpers for A-Frame VR.
 
@@ -16,14 +17,13 @@ src
 │   ├── gamepad-controls.js
 │   ├── keyboard-controls.js
 │   ├── mouse-controls.js
-│   └── touch-controls.js
+│   ├── touch-controls.js
+│   └── trackpad-controls.js    <sub><img alt="New" src="https://img.shields.io/badge/status-new-green.svg"></sub>
 ├── <b>loaders/</b> (<a href="/src/loaders">Documentation</a>)
 │   ├── animation-mixer.js
 │   ├── fbx-model.js
 │   ├── gltf-model-legacy.js
-│   ├── json-model.js
-│   ├── object-model.js
-│   └── ply-model.js
+│   └── object-model.js
 ├── <b>misc/</b> (<a href="/src/misc">Documentation</a>)
 │   ├── checkpoint.js
 │   ├── cube-env-map.js
@@ -31,6 +31,7 @@ src
 │   ├── jump-ability.js
 │   ├── kinematic-body.js       <sub><img alt="Deprecated" src="https://img.shields.io/badge/status-deprecated-orange.svg"></sub>
 │   ├── mesh-smooth.js
+│   ├── normal-material.js      <sub><img alt="New" src="https://img.shields.io/badge/status-new-green.svg"></sub>
 │   └── sphere-collider.js
 ├── <b>pathfinding/</b> (<a href="/src/pathfinding">Documentation</a>)
 │   ├── nav-mesh.js             <sub><img alt="New" src="https://img.shields.io/badge/status-new-green.svg"></sub>
@@ -47,13 +48,13 @@ src
 In the [dist/](https://github.com/donmccurdy/aframe-extras/tree/master/dist) folder, download any package(s) you need. Include the scripts on your page, and all components are automatically registered for you:
 
 ```html
-<script src="//cdn.rawgit.com/donmccurdy/aframe-extras/v4.1.2/dist/aframe-extras.min.js"></script>
+<script src="//cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.min.js"></script>
 ```
 
-CDN builds for aframe-extras/v4.1.2:
+CDN builds for aframe-extras/v5.0.0:
 
-- [aframe-extras.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v4.1.2/dist/aframe-extras.js) *(development)*
-- [aframe-extras.min.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v4.1.2/dist/aframe-extras.min.js) *(production)*
+- [aframe-extras.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.js) *(development)*
+- [aframe-extras.min.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.min.js) *(production)*
 
 For partial builds, use a subpackage like `aframe-extras.controls.min.js`. Full list of packages above.
 
@@ -61,7 +62,7 @@ For partial builds, use a subpackage like `aframe-extras.controls.min.js`. Full 
 
 | A-Frame   | Extras            |
 |-----------|-------------------|
-| v0.8.X | aframe-extras/v4.1.2 |
+| v0.8.X | aframe-extras/v5.0.0 |
 | v0.5.X | */v3.13.1            |
 | v0.4.X | */v3.3.0             |
 | v0.3.X | */v2.6.1             |

@@ -3,10 +3,9 @@
 Loaders for various 3D model types. All are trivial wrappers around one of the [many THREE.js loader classes](https://github.com/mrdoob/three.js/tree/master/examples/js/loaders).
 
 - **gltf-model-legacy**: Loader for glTF 1.0 format, removed from A-Frame core with v0.7.0 release. For glTF 2.0, use the `gltf-model` component that ships with A-Frame.
-- **json-model**: Loader for THREE.js .JSON format, generally containing a single mesh.
 - **object-model**: Loader for THREE.js .JSON format, generally containing multiple meshes or an entire scene.
-- **ply-model**: Loader for PLY format. Works well with occlusion and shadow baked models exported from [MagicaVoxel](https://ephtracy.github.io/).
 - **fbx-model**: Loader for FBX format.
+- **animation-mixer**: Controls animations embedded in a glTF model.
 
 Unsure whether to use `json-model` or `object-model`? Check the console for errors. See also: [Clara.io | THREE.js Export](https://clara.io/learn/user-guide/data_exchange/threejs_export).
 
@@ -39,6 +38,7 @@ an animation and its duration:
 | crossFadeDuration | 0        | Duration of cross-fades between clips, in seconds.        |
 | loop              | repeat   | `once`, `repeat`, or `pingpong`. In `repeat` and `pingpong` modes, the clip plays once plus the specified number of repetitions. For `pingpong`, every second clip plays in reverse. |
 | repetitions       | Infinity | Number of times to play the clip, in addition to the first play. Repetitions are ignored for `loop: once`. |
+| timeScale         | 1        | Scaling factor for playback speed. A value of 0 causes the animation to pause. Negative values cause the animation to play backwards. |
 
 A list of available animations can usually be found by inspecting the model file or its documentation. All animations will play by default. To play only a specific set of animations, use wildcards: `animation-mixer="clip: run_*"`.
 

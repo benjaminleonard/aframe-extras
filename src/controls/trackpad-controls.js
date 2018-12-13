@@ -3,12 +3,19 @@
  */
 module.exports = AFRAME.registerComponent('trackpad-controls', {
   schema: {
-    enabled: { default: true }
+    enabled: { default: true },
+    enableNegX: { default: true },
+    enablePosX: { default: true },
+    enableNegZ: { default: true },
+    enablePosZ: { default: true },
+    mode: { default: 'touch', oneOf: ['swipe', 'touch', 'press'] }
+
   },
 
   init: function () {
     this.dVelocity = new THREE.Vector3();
     this.zVel      = 0;
+    this.xVel      = 0;
     this.bindMethods();
   },
 
@@ -26,11 +33,23 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
   },
 
   addEventListeners: function () {
+    const data = this.data;
     const sceneEl = this.el.sceneEl;
 
     sceneEl.addEventListener('axismove', this.onAxisMove);
-    sceneEl.addEventListener('trackpadtouchstart', this.onTouchStart);
-    sceneEl.addEventListener('trackpadtouchend', this.onTouchEnd);
+
+    switch (data.mode) {
+      case 'swipe':
+      case 'touch':
+        sceneEl.addEventListener('trackpadtouchstart', this.onTouchStart);
+        sceneEl.addEventListener('trackpadtouchend', this.onTouchEnd);
+        break;
+
+      case 'press':
+        sceneEl.addEventListener('trackpaddown', this.onTouchStart);
+        sceneEl.addEventListener('trackpadup', this.onTouchEnd);
+        break;
+    }
 
   },
 
@@ -40,7 +59,8 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
     sceneEl.removeEventListener('axismove', this.onAxisMove);
     sceneEl.removeEventListener('trackpadtouchstart', this.onTouchStart);
     sceneEl.removeEventListener('trackpadtouchend', this.onTouchEnd);
-
+    sceneEl.removeEventListener('trackpaddown', this.onTouchStart);
+    sceneEl.removeEventListener('trackpadup', this.onTouchEnd);
   },
 
   isVelocityActive: function () {
@@ -49,6 +69,7 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
 
   getVelocityDelta: function () {
     this.dVelocity.z = this.isMoving ? -this.zVel : 1;
+    this.dVelocity.x = this.isMoving ? this.xVel : 1;
     return this.dVelocity.clone();
   },
 
@@ -59,26 +80,119 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
   },
 
   onTouchStart: function (e) {
-    this.isMoving = true;
+    switch(this.data.mode){
+      case 'swipe':
+        this.canRecordAxis = true;
+        this.startingAxisData = [];
+        break;
+      case 'touch':
+        this.isMoving = true;
+        break;
+      case 'press':
+        this.isMoving = true;
+        break;
+    }
+
     e.preventDefault();
   },
 
   onTouchEnd: function (e) {
+    if(this.data.mode == 'swipe') {
+        this.startingAxisData = [];
+    }
+
     this.isMoving = false;
     e.preventDefault();
   },
 
   onAxisMove: function(e){
-    var axis_data = e.detail.axis;
+    switch (this.data.mode) {
+      case 'swipe':
+        return this.handleSwipeAxis(e);
+      case 'touch':
+      case 'press':
+        return this.handleTouchAxis(e);
+    }
+  },
 
-    if(axis_data[1] < 0){
-      this.zVel = 1;
+  handleSwipeAxis: function(e) {
+    const data = this.data;
+    const axisData = e.detail.axis;
+
+    if(this.startingAxisData.length === 0 && this.canRecordAxis){
+      this.canRecordAxis = false;
+      this.startingAxisData[0] = axisData[0];
+      this.startingAxisData[1] = axisData[1];
     }
 
-    if(axis_data[1] > 0){
-      this.zVel = -1;
+    if(this.startingAxisData.length > 0){
+      let velX = 0;
+      let velZ = 0;
+
+      if (data.enableNegX && axisData[0] < this.startingAxisData[0]) {
+        velX = -1;
+      }
+
+      if (data.enablePosX && axisData[0] > this.startingAxisData[0]) {
+        velX = 1;
+      }
+
+      if (data.enablePosZ && axisData[1] > this.startingAxisData[1]) {
+        velZ = -1;
+      }
+
+      if (data.enableNegZ && axisData[1] < this.startingAxisData[1]) {
+        velZ = 1;
+      }
+
+      const absChangeZ  = Math.abs(this.startingAxisData[1] - axisData[1]);
+      const absChangeX  = Math.abs(this.startingAxisData[0] - axisData[0]);
+
+      if (absChangeX > absChangeZ) {
+        this.zVel = 0;
+        this.xVel = velX;
+        this.isMoving = true;
+      } else {
+        this.xVel = 0;
+        this.zVel = velZ;
+        this.isMoving = true;
+      }
+
+    }
+  },
+
+  handleTouchAxis: function(e) {
+    const data = this.data;
+    const axisData = e.detail.axis;
+
+    let velX = 0;
+    let velZ = 0;
+
+    if (data.enableNegX && axisData[0] < 0) {
+      velX = -1;
+    }
+
+    if (data.enablePosX && axisData[0] > 0) {
+      velX = 1;
+    }
+
+    if (data.enablePosZ && axisData[1] > 0) {
+      velZ = -1;
+    }
+
+    if (data.enableNegZ && axisData[1] < 0) {
+      velZ = 1;
+    }
+
+    if (Math.abs(axisData[0]) > Math.abs(axisData[1])) {
+      this.zVel = 0;
+      this.xVel = velX;
+    } else {
+      this.xVel = 0;
+      this.zVel = velZ;
     }
 
   }
 
 });
+

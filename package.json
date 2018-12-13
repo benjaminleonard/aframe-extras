@@ -1,6 +1,6 @@
 {
   "name": "aframe-extras",
-  "version": "4.1.2",
+  "version": "5.0.0",
   "description": "Add-ons and examples for A-Frame VR.",
   "author": "Don McCurdy <dm@donmccurdy.com>",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "aframe": "*"
   },
   "dependencies": {
-    "three-pathfinding": "^0.5.5"
+    "three-pathfinding": "^0.7.0"
   },
   "devDependencies": {
     "aframe": "^0.8.0",

@@ -15,9 +15,11 @@ module.exports = AFRAME.registerComponent('animation-mixer', {
   schema: {
     clip:  {default: '*'},
     duration: {default: 0},
+    clampWhenFinished: {default: false, type: 'boolean'},
     crossFadeDuration: {default: 0},
     loop: {default: 'repeat', oneOf: Object.keys(LoopMode)},
-    repetitions: {default: Infinity, min: 0}
+    repetitions: {default: Infinity, min: 0},
+    timeScale: {default: 1}
   },
 
   init: function () {
@@ -56,14 +58,34 @@ module.exports = AFRAME.registerComponent('animation-mixer', {
     if (this.mixer) this.mixer.stopAllAction();
   },
 
-  update: function (previousData) {
-    if (!previousData) return;
+  update: function (prevData) {
+    if (!prevData) return;
 
-    this.stopAction();
+    const data = this.data;
+    const changes = AFRAME.utils.diff(data, prevData);
 
-    if (this.data.clip) {
-      this.playAction();
+    // If selected clips have changed, restart animation.
+    if ('clip' in changes) {
+      this.stopAction();
+      if (data.clip) this.playAction();
+      return;
     }
+
+    // Otherwise, modify running actions.
+    this.activeActions.forEach((action) => {
+      if ('duration' in changes && data.duration) {
+        action.setDuration(data.duration);
+      }
+      if ('clampWhenFinished' in changes) {
+        action.clampWhenFinished = data.clampWhenFinished;
+      }
+      if ('loop' in changes || 'repetitions' in changes) {
+        action.setLoop(LoopMode[data.loop], data.repetitions);
+      }
+      if ('timeScale' in changes) {
+        action.setEffectiveTimeScale(data.timeScale);
+      }
+    });
   },
 
   stopAction: function () {
@@ -91,7 +113,9 @@ module.exports = AFRAME.registerComponent('animation-mixer', {
       if (clip.name.match(re)) {
         const action = this.mixer.clipAction(clip, model);
         action.enabled = true;
+        action.clampWhenFinished = data.clampWhenFinished;
         if (data.duration) action.setDuration(data.duration);
+        if (data.timeScale !== 1) action.setEffectiveTimeScale(data.timeScale);
         action
           .setLoop(LoopMode[data.loop], data.repetitions)
           .fadeIn(data.crossFadeDuration)

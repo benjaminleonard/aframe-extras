@@ -51,11 +51,11 @@ module.exports = AFRAME.registerComponent('movement-controls', {
   update: function (prevData) {
     const el = this.el;
     const data = this.data;
+    const nav = el.sceneEl.systems.nav;
     if (el.sceneEl.hasLoaded) {
       this.injectControls();
     }
-    if (data.constrainToNavMesh !== prevData.constrainToNavMesh) {
-      const nav = el.sceneEl.systems.nav;
+    if (nav && data.constrainToNavMesh !== prevData.constrainToNavMesh) {
       data.constrainToNavMesh
         ? nav.addAgent(this)
         : nav.removeAgent(this);
@@ -156,11 +156,7 @@ module.exports = AFRAME.registerComponent('movement-controls', {
 
   updateVelocity: (function () {
     const vector2 = new THREE.Vector2();
-    // var matrix = new THREE.Matrix4();
-    // var matrix2 = new THREE.Matrix4();
-    // var position = new THREE.Vector3();
-    // var quaternion = new THREE.Quaternion();
-    // var scale = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
 
     return function (dt) {
       let dVelocity;
@@ -188,24 +184,20 @@ module.exports = AFRAME.registerComponent('movement-controls', {
       }
 
       if (dVelocity && data.enabled) {
-        // TODO: Handle rotated rig.
         const cameraEl = data.camera;
-        // matrix.copy(cameraEl.object3D.matrixWorld);
-        // matrix2.getInverse(el.object3D.matrixWorld);
-        // matrix.multiply(matrix2);
-        // matrix.decompose(position, quaternion, scale);
-        // dVelocity.applyQuaternion(quaternion);
 
         // Rotate to heading
-        dVelocity.applyQuaternion(cameraEl.object3D.quaternion);
+        quaternion.copy(cameraEl.object3D.quaternion);
+        quaternion.premultiply(el.object3D.quaternion);
+        dVelocity.applyQuaternion(quaternion);
 
         const factor = dVelocity.length();
         if (data.fly) {
           velocity.copy(dVelocity);
-          velocity.multiplyScalar(this.data.speed * dt);
+          velocity.multiplyScalar(this.data.speed * 16.66667);
         } else {
           vector2.set(dVelocity.x, dVelocity.z);
-          vector2.setLength(factor * this.data.speed * dt);
+          vector2.setLength(factor * this.data.speed * 16.66667);
           velocity.x = vector2.x;
           velocity.z = vector2.y;
         }

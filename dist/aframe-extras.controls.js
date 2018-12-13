@@ -1401,11 +1401,11 @@ module.exports = AFRAME.registerComponent('movement-controls', {
   update: function update(prevData) {
     var el = this.el;
     var data = this.data;
+    var nav = el.sceneEl.systems.nav;
     if (el.sceneEl.hasLoaded) {
       this.injectControls();
     }
-    if (data.constrainToNavMesh !== prevData.constrainToNavMesh) {
-      var nav = el.sceneEl.systems.nav;
+    if (nav && data.constrainToNavMesh !== prevData.constrainToNavMesh) {
       data.constrainToNavMesh ? nav.addAgent(this) : nav.removeAgent(this);
     }
   },
@@ -1499,11 +1499,7 @@ module.exports = AFRAME.registerComponent('movement-controls', {
 
   updateVelocity: function () {
     var vector2 = new THREE.Vector2();
-    // var matrix = new THREE.Matrix4();
-    // var matrix2 = new THREE.Matrix4();
-    // var position = new THREE.Vector3();
-    // var quaternion = new THREE.Quaternion();
-    // var scale = new THREE.Vector3();
+    var quaternion = new THREE.Quaternion();
 
     return function (dt) {
       var dVelocity = void 0;
@@ -1531,24 +1527,20 @@ module.exports = AFRAME.registerComponent('movement-controls', {
       }
 
       if (dVelocity && data.enabled) {
-        // TODO: Handle rotated rig.
         var cameraEl = data.camera;
-        // matrix.copy(cameraEl.object3D.matrixWorld);
-        // matrix2.getInverse(el.object3D.matrixWorld);
-        // matrix.multiply(matrix2);
-        // matrix.decompose(position, quaternion, scale);
-        // dVelocity.applyQuaternion(quaternion);
 
         // Rotate to heading
-        dVelocity.applyQuaternion(cameraEl.object3D.quaternion);
+        quaternion.copy(cameraEl.object3D.quaternion);
+        quaternion.premultiply(el.object3D.quaternion);
+        dVelocity.applyQuaternion(quaternion);
 
         var factor = dVelocity.length();
         if (data.fly) {
           velocity.copy(dVelocity);
-          velocity.multiplyScalar(this.data.speed * dt);
+          velocity.multiplyScalar(this.data.speed * 16.66667);
         } else {
           vector2.set(dVelocity.x, dVelocity.z);
-          vector2.setLength(factor * this.data.speed * dt);
+          vector2.setLength(factor * this.data.speed * 16.66667);
           velocity.x = vector2.x;
           velocity.z = vector2.y;
         }
@@ -1566,12 +1558,14 @@ module.exports = AFRAME.registerComponent('movement-controls', {
 
 module.exports = AFRAME.registerComponent('touch-controls', {
   schema: {
-    enabled: { default: true }
+    enabled: { default: true },
+    reverseEnabled: { default: true }
   },
 
   init: function init() {
     this.dVelocity = new THREE.Vector3();
     this.bindMethods();
+    this.direction = 0;
   },
 
   play: function play() {
@@ -1611,11 +1605,11 @@ module.exports = AFRAME.registerComponent('touch-controls', {
   },
 
   isVelocityActive: function isVelocityActive() {
-    return this.data.enabled && this.isMoving;
+    return this.data.enabled && !!this.direction;
   },
 
   getVelocityDelta: function getVelocityDelta() {
-    this.dVelocity.z = this.isMoving ? -1 : 0;
+    this.dVelocity.z = this.direction;
     return this.dVelocity.clone();
   },
 
@@ -1625,12 +1619,15 @@ module.exports = AFRAME.registerComponent('touch-controls', {
   },
 
   onTouchStart: function onTouchStart(e) {
-    this.isMoving = true;
+    this.direction = -1;
+    if (this.data.reverseEnabled && e.touches.length === 2) {
+      this.direction = 1;
+    }
     e.preventDefault();
   },
 
   onTouchEnd: function onTouchEnd(e) {
-    this.isMoving = false;
+    this.direction = 0;
     e.preventDefault();
   }
 });
@@ -1644,12 +1641,19 @@ module.exports = AFRAME.registerComponent('touch-controls', {
 
 module.exports = AFRAME.registerComponent('trackpad-controls', {
   schema: {
-    enabled: { default: true }
+    enabled: { default: true },
+    enableNegX: { default: true },
+    enablePosX: { default: true },
+    enableNegZ: { default: true },
+    enablePosZ: { default: true },
+    mode: { default: 'touch', oneOf: ['swipe', 'touch', 'press'] }
+
   },
 
   init: function init() {
     this.dVelocity = new THREE.Vector3();
     this.zVel = 0;
+    this.xVel = 0;
     this.bindMethods();
   },
 
@@ -1667,11 +1671,23 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
   },
 
   addEventListeners: function addEventListeners() {
+    var data = this.data;
     var sceneEl = this.el.sceneEl;
 
     sceneEl.addEventListener('axismove', this.onAxisMove);
-    sceneEl.addEventListener('trackpadtouchstart', this.onTouchStart);
-    sceneEl.addEventListener('trackpadtouchend', this.onTouchEnd);
+
+    switch (data.mode) {
+      case 'swipe':
+      case 'touch':
+        sceneEl.addEventListener('trackpadtouchstart', this.onTouchStart);
+        sceneEl.addEventListener('trackpadtouchend', this.onTouchEnd);
+        break;
+
+      case 'press':
+        sceneEl.addEventListener('trackpaddown', this.onTouchStart);
+        sceneEl.addEventListener('trackpadup', this.onTouchEnd);
+        break;
+    }
   },
 
   removeEventListeners: function removeEventListeners() {
@@ -1680,6 +1696,8 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
     sceneEl.removeEventListener('axismove', this.onAxisMove);
     sceneEl.removeEventListener('trackpadtouchstart', this.onTouchStart);
     sceneEl.removeEventListener('trackpadtouchend', this.onTouchEnd);
+    sceneEl.removeEventListener('trackpaddown', this.onTouchStart);
+    sceneEl.removeEventListener('trackpadup', this.onTouchEnd);
   },
 
   isVelocityActive: function isVelocityActive() {
@@ -1688,6 +1706,7 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
 
   getVelocityDelta: function getVelocityDelta() {
     this.dVelocity.z = this.isMoving ? -this.zVel : 1;
+    this.dVelocity.x = this.isMoving ? this.xVel : 1;
     return this.dVelocity.clone();
   },
 
@@ -1698,24 +1717,115 @@ module.exports = AFRAME.registerComponent('trackpad-controls', {
   },
 
   onTouchStart: function onTouchStart(e) {
-    this.isMoving = true;
+    switch (this.data.mode) {
+      case 'swipe':
+        this.canRecordAxis = true;
+        this.startingAxisData = [];
+        break;
+      case 'touch':
+        this.isMoving = true;
+        break;
+      case 'press':
+        this.isMoving = true;
+        break;
+    }
+
     e.preventDefault();
   },
 
   onTouchEnd: function onTouchEnd(e) {
+    if (this.data.mode == 'swipe') {
+      this.startingAxisData = [];
+    }
+
     this.isMoving = false;
     e.preventDefault();
   },
 
   onAxisMove: function onAxisMove(e) {
-    var axis_data = e.detail.axis;
+    switch (this.data.mode) {
+      case 'swipe':
+        return this.handleSwipeAxis(e);
+      case 'touch':
+      case 'press':
+        return this.handleTouchAxis(e);
+    }
+  },
 
-    if (axis_data[1] < 0) {
-      this.zVel = 1;
+  handleSwipeAxis: function handleSwipeAxis(e) {
+    var data = this.data;
+    var axisData = e.detail.axis;
+
+    if (this.startingAxisData.length === 0 && this.canRecordAxis) {
+      this.canRecordAxis = false;
+      this.startingAxisData[0] = axisData[0];
+      this.startingAxisData[1] = axisData[1];
     }
 
-    if (axis_data[1] > 0) {
-      this.zVel = -1;
+    if (this.startingAxisData.length > 0) {
+      var velX = 0;
+      var velZ = 0;
+
+      if (data.enableNegX && axisData[0] < this.startingAxisData[0]) {
+        velX = -1;
+      }
+
+      if (data.enablePosX && axisData[0] > this.startingAxisData[0]) {
+        velX = 1;
+      }
+
+      if (data.enablePosZ && axisData[1] > this.startingAxisData[1]) {
+        velZ = -1;
+      }
+
+      if (data.enableNegZ && axisData[1] < this.startingAxisData[1]) {
+        velZ = 1;
+      }
+
+      var absChangeZ = Math.abs(this.startingAxisData[1] - axisData[1]);
+      var absChangeX = Math.abs(this.startingAxisData[0] - axisData[0]);
+
+      if (absChangeX > absChangeZ) {
+        this.zVel = 0;
+        this.xVel = velX;
+        this.isMoving = true;
+      } else {
+        this.xVel = 0;
+        this.zVel = velZ;
+        this.isMoving = true;
+      }
+    }
+  },
+
+  handleTouchAxis: function handleTouchAxis(e) {
+    var data = this.data;
+    var axisData = e.detail.axis;
+
+    var velX = 0;
+    var velZ = 0;
+
+    if (data.enableNegX && axisData[0] < 0) {
+      velX = -1;
+    }
+
+    if (data.enablePosX && axisData[0] > 0) {
+      velX = 1;
+    }
+
+    if (data.enablePosZ && axisData[1] > 0) {
+      velZ = -1;
+    }
+
+    if (data.enableNegZ && axisData[1] < 0) {
+      velZ = 1;
+    }
+
+    if (Math.abs(axisData[0]) > Math.abs(axisData[1])) {
+      this.zVel = 0;
+      this.xVel = velX;
+    } else {
+      this.xVel = 0;
+      this.zVel = velZ;
     }
   }
 
