@@ -1,6 +1,6 @@
 const fetchScript = require('../../lib/fetch-script')();
 
-const LOADER_SRC = 'https://rawgit.com/mrdoob/three.js/r86/examples/js/loaders/GLTFLoader.js';
+const LOADER_SRC = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r86/examples/js/loaders/GLTFLoader.js';
 
 const loadLoader = (function () {
   let promise;
@@ -12,7 +12,7 @@ const loadLoader = (function () {
 
 /**
  * Legacy loader for glTF 1.0 models.
- * Asynchronously loads THREE.GLTFLoader from rawgit.
+ * Asynchronously loads THREE.GLTFLoader from jsdelivr.
  */
 module.exports = AFRAME.registerComponent('gltf-model-legacy', {
   schema: {type: 'model'},

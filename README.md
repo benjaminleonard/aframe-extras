@@ -21,6 +21,7 @@ src
 │   └── trackpad-controls.js    <sub><img alt="New" src="https://img.shields.io/badge/status-new-green.svg"></sub>
 ├── <b>loaders/</b> (<a href="/src/loaders">Documentation</a>)
 │   ├── animation-mixer.js
+│   ├── collada-model-legacy.js <sub><img alt="New" src="https://img.shields.io/badge/status-new-green.svg"></sub>
 │   ├── fbx-model.js
 │   ├── gltf-model-legacy.js
 │   └── object-model.js
@@ -48,25 +49,26 @@ src
 In the [dist/](https://github.com/donmccurdy/aframe-extras/tree/master/dist) folder, download any package(s) you need. Include the scripts on your page, and all components are automatically registered for you:
 
 ```html
-<script src="//cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.0.1/dist/aframe-extras.min.js"></script>
 ```
 
-CDN builds for aframe-extras/v5.0.0:
+CDN builds for aframe-extras/v6.0.0:
 
-- [aframe-extras.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.js) *(development)*
-- [aframe-extras.min.js](https://cdn.rawgit.com/donmccurdy/aframe-extras/v5.0.0/dist/aframe-extras.min.js) *(production)*
+- [aframe-extras.js](https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.0.1/dist/aframe-extras.js) *(development)*
+- [aframe-extras.min.js](https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.0.1/dist/aframe-extras.min.js) *(production)*
 
 For partial builds, use a subpackage like `aframe-extras.controls.min.js`. Full list of packages above.
 
 **A-Frame Version Compatibility**
 
-| A-Frame   | Extras            |
-|-----------|-------------------|
-| v0.8.X | aframe-extras/v5.0.0 |
-| v0.5.X | */v3.13.1            |
-| v0.4.X | */v3.3.0             |
-| v0.3.X | */v2.6.1             |
-| v0.2.X | */v1.17.0            |
+| A-Frame  | Extras               |
+|----------|----------------------|
+| v0.9.X   | aframe-extras/v6.0.0 |
+| v0.8.X   | */v5.1.0             |
+| v0.5.X   | */v3.13.1            |
+| v0.4.X   | */v3.3.0             |
+| v0.3.X   | */v2.6.1             |
+| v0.2.X   | */v1.17.0            |
 
 > **NOTE:** Several components and examples also rely on [aframe-physics-system](https://github.com/donmccurdy/aframe-physics-system).
 
